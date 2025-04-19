@@ -92,11 +92,18 @@ if st.button("Search"):
 
             return results, mentioned
 
+        skipped_ids = []  # To track skipped papers
+
         for pid in paper_ids:
             try:
                 summary_url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id={pid}&retmode=json"
                 summary = requests.get(summary_url).json()
-                title = summary["result"][pid]["title"]
+
+                if "result" not in summary or pid not in summary["result"]:
+                    skipped_ids.append(pid)
+                    continue
+
+                title = summary["result"][pid].get("title", "No title available")
                 link = f"https://pubmed.ncbi.nlm.nih.gov/{pid}/"
 
                 pmcid = get_pmc_id(pid)
@@ -125,5 +132,10 @@ if st.button("Search"):
                                     st.markdown("---")
             except Exception as e:
                 st.warning(f"❌ Skipped paper {pid}: {e}")
+
+        if skipped_ids:
+            with st.expander("⚠️ Skipped Papers (missing summary metadata)"):
+                for sid in skipped_ids:
+                    st.markdown(f"❌ [PubMed ID {sid}](https://pubmed.ncbi.nlm.nih.gov/{sid}/)")
 
     st.success("✅ Extraction complete!")
