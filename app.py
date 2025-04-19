@@ -5,19 +5,16 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 from pyvis.network import Network
 import spacy
-import os
 
-# Load SciSpacy model
 @st.cache_resource
 def load_model():
-    import scispacy
     return spacy.load("en_core_sci_sm")
 
 nlp = load_model()
 
 st.set_page_config(layout="wide")
 st.title("🧬 Microbiome Regulation Explorer")
-st.markdown("Enter two keywords (e.g., `stress`, `women`) to find bacteria that are upregulated or downregulated in recent PubMed literature.")
+st.markdown("Enter two keywords to explore how bacteria are regulated in recent PubMed literature.")
 
 col1, col2 = st.columns(2)
 with col1:
@@ -29,6 +26,7 @@ if st.button("Search"):
     query = f'({keyword_1}[Title/Abstract]) AND ({keyword_2}[Title/Abstract]) AND (microbiome[Title/Abstract] OR HPA[Title/Abstract])'
     today = datetime.today()
     start_date = (today - timedelta(days=3*365)).strftime("%Y/%m/%d")
+
     search_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
     params = {
         "db": "pubmed",
@@ -66,7 +64,6 @@ if st.button("Search"):
             }
             papers.append(paper)
 
-            # Extract bacteria
             doc = nlp(paper["abstract"])
             bacteria_found = [ent.text.lower() for ent in doc.ents if "organism" in ent.label_.lower()]
             text_lower = (title + " " + abstract_text).lower()
@@ -77,13 +74,12 @@ if st.button("Search"):
                 elif any(p in text_lower for p in down_patterns):
                     bacteria_regulation[bacterium]["down"].append(paper)
 
-        except Exception as e:
+        except Exception:
             continue
 
     if not bacteria_regulation:
         st.warning("No regulated bacteria found.")
     else:
-        # Build network
         net = Network(notebook=False, height='600px', width='100%', bgcolor='#ffffff', font_color='black')
 
         for bacterium, data in bacteria_regulation.items():
@@ -96,7 +92,6 @@ if st.button("Search"):
         output_file = "bacteria_network.html"
         net.write_html(output_file)
 
-        # Show it
         with open(output_file, "r", encoding="utf-8") as f:
             html = f.read()
             st.components.v1.html(html, height=600, scrolling=True)
