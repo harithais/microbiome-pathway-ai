@@ -71,7 +71,7 @@ if st.button("Search"):
             papers.append(paper)
 
             doc = nlp(paper["abstract"])
-            bacteria_found = [ent.text.lower() for ent in doc.ents if "organism" in ent.label_.lower()]
+            bacteria_found = [ent.text.lower() for ent in doc.ents if ent.label_ in ["ORG", "GPE", "LOC", "PERSON", "NORP"] or "bact" in ent.text.lower()]
             text_lower = (title + " " + abstract_text).lower()
 
             for bacterium in set(bacteria_found):
