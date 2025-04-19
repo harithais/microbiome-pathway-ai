@@ -10,7 +10,8 @@ import os
 # Load SciSpacy model
 @st.cache_resource
 def load_model():
-    return spacy.load("en_ner_bionlp13cg_md")
+    import scispacy
+    return spacy.load("en_core_sci_sm")
 
 nlp = load_model()
 
