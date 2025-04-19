@@ -66,7 +66,7 @@ if st.button("Search"):
             return body.get_text(separator=" ")
         return None
 
-   def extract_bacteria_sentences(text):
+def extract_bacteria_sentences(text):
     doc = nlp(text)
     sentences = list(doc.sents)
     results = defaultdict(list)
