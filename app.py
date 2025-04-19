@@ -22,6 +22,12 @@ with col1:
 with col2:
     keyword_2 = st.text_input("Keyword 2", value="stress")
 
+paper_limit = st.selectbox(
+    "📄 How many papers would you like to search?",
+    options=[30, 60, 100],
+    index=0
+)
+
 if st.button("Search"):
     with st.spinner("⏳ Fetching papers and extracting bacteria..."):
         query = f'({keyword_1}[Title/Abstract]) AND ({keyword_2}[Title/Abstract]) AND (microbiome[Title/Abstract] OR gut[Title/Abstract] OR "gut microbiota"[Title/Abstract] OR flora[Title/Abstract] OR bacteria[Title/Abstract] OR "gut-brain axis"[Title/Abstract] OR HPA[Title/Abstract] OR "hypothalamic pituitary adrenal"[Title/Abstract])'
@@ -34,7 +40,8 @@ if st.button("Search"):
             "db": "pubmed",
             "term": f"{query} AND ({start_date}[PDAT] : {today.strftime('%Y/%m/%d')}[PDAT])",
             "retmode": "json",
-            "retmax": 30
+            "retmax": paper_limit,
+            "sort": "pub+date"
         }
 
         response = requests.get(search_url, params=params).json()
