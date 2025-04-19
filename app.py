@@ -7,8 +7,14 @@ from pyvis.network import Network
 import spacy
 
 @st.cache_resource
+@st.cache_resource
 def load_model():
-    return spacy.load("en_core_sci_sm")
+    try:
+        return spacy.load("en_core_sci_sm")
+    except OSError:
+        from spacy.cli import download
+        download("en_core_sci_sm")
+        return spacy.load("en_core_sci_sm")
 
 nlp = load_model()
 
