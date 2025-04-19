@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 import spacy
 
+st.set_page_config(layout="wide")
+
 # Load spaCy model
 @st.cache_resource
 def load_model():
@@ -13,7 +15,6 @@ def load_model():
 
 nlp = load_model()
 
-st.set_page_config(layout="wide")
 st.title("🧬 Full-Text Bacteria Explorer")
 st.markdown("Search PubMed for full-text papers mentioning bacteria under stress-related keywords. Click each paper to see matched sentences.")
 
