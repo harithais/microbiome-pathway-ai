@@ -4,3 +4,4 @@ scispacy==0.5.5
 pyvis==0.3.2
 beautifulsoup4==4.12.2
 requests==2.31.0
+en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1.tar.gz
