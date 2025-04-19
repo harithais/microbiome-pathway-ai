@@ -6,7 +6,7 @@ from collections import defaultdict
 import spacy
 
 st.set_page_config(layout="wide")
-st.title("🧬 Full-Text Bacteria Explorer")
+st.title("🧬 Microbiome Database")
 st.markdown("Enter keywords to explore microbiome-related research papers with actual bacteria mentions from full-text or abstracts.")
 
 @st.cache_resource
