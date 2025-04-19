@@ -66,15 +66,33 @@ if st.button("Search"):
             return body.get_text(separator=" ")
         return None
 
-    def extract_bacteria_sentences(text):
-        doc = nlp(text)
-        sentences = list(doc.sents)
-        results = defaultdict(list)
-        for sent in sentences:
-            for ent in sent.ents:
-                if ent.label_ in ["ORG", "GPE", "LOC", "PERSON", "NORP"] or "bact" in ent.text.lower():
-                    results[ent.text.lower()].append(sent.text.strip())
-        return results
+   def extract_bacteria_sentences(text):
+    doc = nlp(text)
+    sentences = list(doc.sents)
+    results = defaultdict(list)
+
+    # 🧫 Curated top bacteria list (human + vaginal + gut)
+    known_bacteria = set([
+        "lactobacillus", "bifidobacterium", "faecalibacterium", "akkermansia", "clostridium", "prevotella",
+        "bacteroides", "eubacterium", "coprococcus", "roseburia", "ruminococcus", "enterococcus", "escherichia",
+        "streptococcus", "veillonella", "actinomyces", "peptostreptococcus", "alistipes", "parabacteroides",
+        "blautia", "desulfovibrio", "butyricicoccus", "dialister", "oscillospira", "sutterella",
+        "tannerella", "holdemania", "phocaeicola", "granulicatella", "megasphaera", "collinsella",
+        "saricina", "clostridioides", "anaerostipes", "fusobacterium", "campylobacter", "peptococcus",
+        "leptotrichia", "atopobium", "mobiluncus", "treponema", "methanobrevibacter",
+        "ureaplasma", "mycoplasma", "eggerthella", "finegoldia", "peptoniphilus", "acinetobacter",
+        "klebsiella", "pseudomonas", "weissella", "lactococcus", "lactiplantibacillus", "cutibacterium",
+        "corynebacterium", "neisseria", "gardnerella"
+    ])
+
+    for sent in sentences:
+        sent_lower = sent.text.lower()
+        for bac in known_bacteria:
+            if bac in sent_lower:
+                results[bac].append(sent.text.strip())
+
+    return results
+
 
     for pid in paper_ids:
         try:
