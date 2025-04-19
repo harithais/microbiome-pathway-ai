@@ -6,8 +6,9 @@ from collections import defaultdict
 import spacy
 
 st.set_page_config(layout="wide")
+st.title("🧬 Full-Text Bacteria Explorer")
+st.markdown("Enter keywords to explore microbiome-related research papers with actual bacteria mentions from full-text or abstracts.")
 
-# Load spaCy model
 @st.cache_resource
 def load_model():
     import en_core_web_sm
@@ -15,23 +16,18 @@ def load_model():
 
 nlp = load_model()
 
-st.title("🧬 Full-Text Bacteria Explorer")
-st.markdown("Search PubMed for full-text papers mentioning bacteria under stress-related keywords. Click each paper to see matched sentences.")
-
 col1, col2 = st.columns(2)
 with col1:
-    keyword_1 = st.text_input("Keyword 1", value="stress")
+    keyword_1 = st.text_input("Keyword 1", value="pregnancy")
 with col2:
-    keyword_2 = st.text_input("Keyword 2", value="women")
+    keyword_2 = st.text_input("Keyword 2", value="stress")
 
 if st.button("Search"):
     query = f'({keyword_1}[Title/Abstract]) AND ({keyword_2}[Title/Abstract]) AND (microbiome[Title/Abstract] OR gut[Title/Abstract] OR "gut microbiota"[Title/Abstract] OR flora[Title/Abstract] OR bacteria[Title/Abstract] OR "gut-brain axis"[Title/Abstract] OR HPA[Title/Abstract] OR "hypothalamic pituitary adrenal"[Title/Abstract])'
-    
-    # Date filter: last 3 years
-    today = datetime.today()
-    start_date = (today - timedelta(days=3*365)).strftime("%Y/%m/%d")
 
-    # PubMed search
+    today = datetime.today()
+    start_date = (today - timedelta(days=3 * 365)).strftime("%Y/%m/%d")
+
     search_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
     params = {
         "db": "pubmed",
@@ -42,10 +38,9 @@ if st.button("Search"):
 
     response = requests.get(search_url, params=params).json()
     paper_ids = response.get("esearchresult", {}).get("idlist", [])
-    st.success(f"Found {len(paper_ids)} papers.")
+    st.success(f"🔍 Found {len(paper_ids)} papers")
 
     def get_pmc_id(pmid):
-        # Try converting PubMed ID to PMC ID
         url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id={pmid}&retmode=json&linkname=pubmed_pmc"
         r = requests.get(url)
         links = r.json().get('linksets', [])
@@ -57,7 +52,6 @@ if st.button("Search"):
         return None
 
     def extract_text_from_pmc(pmcid):
-        # Fetch full-text XML
         url = f"https://www.ncbi.nlm.nih.gov/pmc/oai/oai.cgi?verb=GetRecord&identifier=oai:pubmedcentral.nih.gov:{pmcid}&metadataPrefix=pmc"
         xml = requests.get(url).content
         soup = BeautifulSoup(xml, "xml")
@@ -66,48 +60,48 @@ if st.button("Search"):
             return body.get_text(separator=" ")
         return None
 
-def extract_bacteria_sentences(text):
-    doc = nlp(text)
-    sentences = list(doc.sents)
-    results = defaultdict(list)
+    def extract_bacteria_sentences(text):
+        doc = nlp(text)
+        sentences = list(doc.sents)
+        results = defaultdict(list)
+        mentioned = defaultdict(int)
 
-    # 🧫 Curated top bacteria list (human + vaginal + gut)
-    known_bacteria = set([
-        "lactobacillus", "bifidobacterium", "faecalibacterium", "akkermansia", "clostridium", "prevotella",
-        "bacteroides", "eubacterium", "coprococcus", "roseburia", "ruminococcus", "enterococcus", "escherichia",
-        "streptococcus", "veillonella", "actinomyces", "peptostreptococcus", "alistipes", "parabacteroides",
-        "blautia", "desulfovibrio", "butyricicoccus", "dialister", "oscillospira", "sutterella",
-        "tannerella", "holdemania", "phocaeicola", "granulicatella", "megasphaera", "collinsella",
-        "saricina", "clostridioides", "anaerostipes", "fusobacterium", "campylobacter", "peptococcus",
-        "leptotrichia", "atopobium", "mobiluncus", "treponema", "methanobrevibacter",
-        "ureaplasma", "mycoplasma", "eggerthella", "finegoldia", "peptoniphilus", "acinetobacter",
-        "klebsiella", "pseudomonas", "weissella", "lactococcus", "lactiplantibacillus", "cutibacterium",
-        "corynebacterium", "neisseria", "gardnerella"
-    ])
+        known_bacteria = set([
+            "lactobacillus", "bifidobacterium", "faecalibacterium", "akkermansia", "clostridium", "prevotella",
+            "bacteroides", "eubacterium", "coprococcus", "roseburia", "ruminococcus", "enterococcus", "escherichia",
+            "streptococcus", "veillonella", "actinomyces", "peptostreptococcus", "alistipes", "parabacteroides",
+            "blautia", "desulfovibrio", "butyricicoccus", "dialister", "oscillospira", "sutterella",
+            "tannerella", "holdemania", "phocaeicola", "granulicatella", "megasphaera", "collinsella",
+            "saricina", "clostridioides", "anaerostipes", "fusobacterium", "campylobacter", "peptococcus",
+            "leptotrichia", "atopobium", "mobiluncus", "treponema", "methanobrevibacter",
+            "ureaplasma", "mycoplasma", "eggerthella", "finegoldia", "peptoniphilus", "acinetobacter",
+            "klebsiella", "pseudomonas", "weissella", "lactococcus", "cutibacterium",
+            "corynebacterium", "neisseria", "gardnerella"
+        ])
 
-    for sent in sentences:
-        sent_lower = sent.text.lower()
+        text_lower = text.lower()
         for bac in known_bacteria:
-            if bac in sent_lower:
-                results[bac].append(sent.text.strip())
+            mentioned[bac] = text_lower.count(bac)
 
-    return results
+        for sent in sentences:
+            sent_lower = sent.text.lower()
+            for bac in known_bacteria:
+                if bac in sent_lower:
+                    results[bac].append(sent.text.strip())
 
+        return results, mentioned
 
     for pid in paper_ids:
         try:
-            # Get summary (title)
             summary_url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id={pid}&retmode=json"
             summary = requests.get(summary_url).json()
             title = summary["result"][pid]["title"]
             link = f"https://pubmed.ncbi.nlm.nih.gov/{pid}/"
 
-            # Try full text
             pmcid = get_pmc_id(pid)
             if pmcid:
                 text = extract_text_from_pmc(pmcid)
             else:
-                # Fallback: abstract only
                 fetch_url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={pid}&retmode=xml"
                 fetch_response = requests.get(fetch_url)
                 soup = BeautifulSoup(fetch_response.content, "xml")
@@ -115,14 +109,18 @@ def extract_bacteria_sentences(text):
                 text = abstract.text if abstract else ""
 
             if text:
-                bac_matches = extract_bacteria_sentences(text)
-                if bac_matches:
+                bac_sentences, bac_mentions = extract_bacteria_sentences(text)
+                if bac_sentences or any(v > 0 for v in bac_mentions.values()):
                     with st.expander(f"📄 {title}"):
                         st.markdown(f"[🔗 View on PubMed]({link})")
-                        for bac, sents in bac_matches.items():
-                            st.markdown(f"**🦠 {bac.capitalize()}**")
-                            for s in sents:
-                                st.markdown(f"• _{s}_")
-                            st.markdown("---")
+                        for bac, count in bac_mentions.items():
+                            if count > 0:
+                                st.markdown(f"**🦠 {bac.capitalize()}** — mentioned {count} time(s)")
+                                if bac in bac_sentences:
+                                    for s in bac_sentences[bac]:
+                                        st.markdown(f"• _{s}_")
+                                else:
+                                    st.markdown("_No exact sentence match found_")
+                                st.markdown("---")
         except Exception as e:
-            st.warning(f"Failed on paper {pid}: {e}")
+            st.warning(f"❌ Skipped paper {pid}: {e}")
